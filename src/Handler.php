@@ -6,20 +6,20 @@
  *
  * @author Qexy admin@qexy.org
  *
- * @copyright © 2021 Alonity
+ * @copyright © 2022 Alonity
  *
  * @package alonity\eventhandler
  *
  * @license MIT
  *
- * @version 1.0.0
+ * @version 1.1.0
  *
  */
 
 namespace alonity\events;
 
 class Handler {
-    const VERSION = '1.0.0';
+    const VERSION = '1.1.0';
 
     private static $events = [];
 
@@ -29,9 +29,19 @@ class Handler {
      * @param string $eventName
      *
      * @param callable $callback
+     *
+     * @param string|int|null $keyname
     */
-    public static function listen(string $eventName, callable $callback){
-        self::$events[$eventName] = $callback;
+    public static function listen(string $eventName, callable $callback, $keyname = null){
+        if(!isset(self::$events[$eventName])){
+            self::$events[$eventName] = [];
+        }
+
+        if(!is_null($keyname)){
+            self::$events[$eventName][$keyname] = $callback;
+        }else{
+            self::$events[$eventName][] = $callback;
+        }
     }
 
     /**
@@ -40,15 +50,27 @@ class Handler {
      * @param string $name
      *
      * @param array|null $params
+     *
+     * @param string|int|null
+     *
+     * @return bool
     */
-    public static function emit(string $name, array $params = null) : bool {
+    public static function emit(string $name, array $params = null, $keyname = null) : bool {
         $events = self::$events;
 
         if(!isset($events[$name])){
             return false;
         }
 
-        $events[$name]($params);
+        if(!is_null($keyname)){
+            $events[$name][$keyname]($params);
+
+            return true;
+        }
+
+        foreach($events[$name] as $event){
+            $event($params);
+        }
 
         return true;
     }
